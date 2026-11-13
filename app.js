@@ -17,7 +17,7 @@ let currentIndex = -1;
 let isShuffle = false;
 let isLoop = false;
 
-// 1. IndexedDB Setup (Songs ko offline save rakhne ke liye)
+// 1. IndexedDB Setup (Batch saving for 250+ songs)
 const dbPromise = new Promise((resolve, reject) => {
   const req = indexedDB.open('OfflineMusicDB', 1);
   req.onupgradeneeded = () => req.result.createObjectStore('songs', { keyPath: 'name' });
@@ -27,10 +27,26 @@ const dbPromise = new Promise((resolve, reject) => {
 
 async function saveSongsToDB(fileArray) {
   const db = await dbPromise;
-  const tx = db.transaction('songs', 'readwrite');
-  const store = tx.objectStore('songs');
-  store.clear();
-  fileArray.forEach(file => store.put({ name: file.name, blob: file }));
+
+  // Purana data clear karo
+  await new Promise((res) => {
+    const clearTx = db.transaction('songs', 'readwrite');
+    clearTx.objectStore('songs').clear();
+    clearTx.oncomplete = res;
+  });
+
+  // 20-20 gaano ke batches mein save karo taaki phone hang ya crash na ho
+  const batchSize = 20;
+  for (let i = 0; i < fileArray.length; i += batchSize) {
+    const batch = fileArray.slice(i, i + batchSize);
+    await new Promise((res, rej) => {
+      const tx = db.transaction('songs', 'readwrite');
+      const store = tx.objectStore('songs');
+      batch.forEach(file => store.put({ name: file.name, blob: file }));
+      tx.oncomplete = res;
+      tx.onerror = rej;
+    });
+  }
 }
 
 async function loadSongsFromDB() {
@@ -49,16 +65,28 @@ async function loadSongsFromDB() {
   };
 }
 
-// 2. Folder/Files Selection
+// 2. Multi-File Selection (Extension + MIME check)
+const AUDIO_EXT = /\.(mp3|m4a|wav|ogg|aac|flac|opus|webm)$/i;
+
 fileInput.addEventListener('change', async (e) => {
-  const audioFiles = Array.from(e.target.files).filter(f => f.type.startsWith('audio/'));
+  const audioFiles = Array.from(e.target.files).filter(
+    f => f.type.startsWith('audio/') || AUDIO_EXT.test(f.name)
+  );
   if (!audioFiles.length) return;
-  await saveSongsToDB(audioFiles);
+
+  // Pehle turant UI mein saare gaane dikhao
   songs = audioFiles.map(file => ({
     name: file.name.replace(/\.[^/.]+$/, ''),
     url: URL.createObjectURL(file)
   }));
   renderList(songs);
+
+  // Background mein safely DB mein save karo
+  try {
+    await saveSongsToDB(audioFiles);
+  } catch (err) {
+    console.warn('Storage limit reached for some files:', err);
+  }
 });
 
 // 3. Render & Search
