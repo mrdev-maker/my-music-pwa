@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#121212" />
+  <title>Ad-Free Music</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>My Music</h1>
+    <label for="fileInput" class="upload-btn">+ Add Songs / Folder</label>
+    <input type="file" id="fileInput" webkitdirectory multiple accept="audio/*" hidden />
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search downloaded songs..." />
+  </div>
+
+  <ul id="songList" class="song-list">
+    <li class="empty-msg">Upar "+ Add Songs" dabakar apna Music/Downloads folder select karo.</li>
+  </ul>
+
+  <footer class="player">
+    <div class="track-info">
+      <div id="nowPlaying">No song selected</div>
+      <div class="time-row">
+        <span id="currentTime">0:00</span>
+        <input type="range" id="seekBar" value="0" min="0" max="100" />
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="shuffleBtn" title="Shuffle">🔀</button>
+      <button id="prevBtn">⏮️</button>
+      <button id="playPauseBtn" class="play-btn">▶️</button>
+      <button id="nextBtn">⏭️</button>
+      <button id="loopBtn" title="Repeat">🔁</button>
+    </div>
+  </footer>
+
+  <audio id="audioPlayer"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
