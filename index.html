@@ -2,46 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#121212" />
-  <title>Ad-Free Music</title>
+  <title>MyMusic</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <header>
-    <h1>My Music</h1>
-    <label for="fileInput" class="upload-btn">+ Add Songs</label>
+<body class="dark-mode">
+
+  <!-- TOP SEARCH & THEME HEADER -->
+  <header class="top-bar">
+    <button id="themeToggleBtn" class="icon-btn" title="Switch Theme">☀️</button>
+    <div class="search-pill">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search songs, playlists..." />
+      <button id="clearSearchBtn" class="clear-btn hidden">✕</button>
+    </div>
+    <label for="fileInput" class="add-pill" title="Add Songs">+ Add</label>
     <input type="file" id="fileInput" multiple hidden />
   </header>
 
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search downloaded songs..." />
+  <!-- 3 GRADIENT QUICK CARDS -->
+  <section class="quick-cards">
+    <div class="q-card card-fav" data-view="favourites">
+      <div class="q-icon">♥</div>
+      <div class="q-title">Favourites</div>
+      <div class="q-sub" id="favCount">0 songs</div>
+    </div>
+    <div class="q-card card-play" data-view="playlists">
+      <div class="q-icon">💿</div>
+      <div class="q-title">Playlists</div>
+      <div class="q-sub" id="playlistCount">0 lists</div>
+    </div>
+    <div class="q-card card-recent" data-view="recent">
+      <div class="q-icon">🕒</div>
+      <div class="q-title">Recent</div>
+      <div class="q-sub" id="recentCount">0 played</div>
+    </div>
+  </section>
+
+  <!-- CATEGORY TABS -->
+  <nav class="tabs-bar">
+    <button class="tab active" data-view="all">Songs</button>
+    <button class="tab" data-view="favourites">Favourites</button>
+    <button class="tab" data-view="playlists">Playlists</button>
+    <button class="tab" data-view="recent">Recent</button>
+  </nav>
+
+  <!-- SHUFFLE & SORT BAR -->
+  <div class="action-row" id="actionRow">
+    <button id="shuffleAllBtn" class="shuffle-play-btn">
+      <span class="play-circle">▶</span>
+      <span>Shuffle playback</span>
+      <span class="total-badge" id="totalSongsBadge">(0)</span>
+    </button>
+    <div class="sort-actions">
+      <button id="sortBtn" class="icon-btn" title="Sort A-Z">⇅</button>
+      <button id="newPlaylistBtn" class="icon-btn" title="Create Playlist">➕</button>
+    </div>
   </div>
 
+  <!-- PLAYLIST VIEW (Hidden by default) -->
+  <div id="playlistContainer" class="playlist-grid hidden"></div>
+
+  <!-- MAIN SONG LIST -->
   <ul id="songList" class="song-list">
-    <li class="empty-msg">Upar "+ Add Songs" dabakar apna Music/Downloads folder se gaane select karo.</li>
+    <li class="empty-msg">Upar "+ Add" dabakar apne phone ke saare gaane select karo.</li>
   </ul>
 
-  <footer class="player">
-    <div class="track-info">
-      <div id="nowPlaying">No song selected</div>
-      <div class="time-row">
-        <span id="currentTime">0:00</span>
-        <input type="range" id="seekBar" value="0" min="0" max="100" />
-        <span id="duration">0:00</span>
+  <!-- FLOATING MINI PLAYER -->
+  <div id="miniPlayer" class="mini-player">
+    <div class="mini-left" id="openFullPlayer">
+      <div class="vinyl-disc" id="miniDisc">🎵</div>
+      <div class="mini-meta">
+        <div id="miniTitle">No song selected</div>
+        <div id="miniSub">Tap to open player</div>
       </div>
     </div>
-    <div class="controls">
-      <button id="shuffleBtn" title="Shuffle">🔀</button>
-      <button id="prevBtn">⏮️</button>
-      <button id="playPauseBtn" class="play-btn">▶️</button>
-      <button id="nextBtn">⏭️</button>
-      <button id="loopBtn" title="Repeat">🔁</button>
+    <div class="mini-controls">
+      <button id="miniPlayBtn" class="mini-circle-btn">▶</button>
+      <button id="miniNextBtn" class="mini-next-btn">⏭</button>
     </div>
-  </footer>
+  </div>
 
-  <audio id="audioPlayer"></audio>
+  <!-- FULL SCREEN NOW PLAYING MODAL -->
+  <div id="fullPlayer" class="full-player hidden">
+    <div class="fp-header">
+      <button id="closeFullPlayer" class="icon-btn">⌄</button>
+      <span class="fp-header-label">NOW PLAYING</span>
+      <div class="fp-top-actions">
+        <button id="eqToggleBtn" class="icon-btn" title="Bass & Equalizer">🎚️</button>
+        <button id="fpFavBtn" class="icon-btn" title="Favourite">♡</button>
+      </div>
+    </div>
+
+    <!-- Center Vinyl / Equalizer / Queue Area -->
+    <div class="fp-center">
+      <div class="big-vinyl" id="bigVinyl">
+        <div class="vinyl-inner">
+          <span id="bigArtLetter">M</span>
+        </div>
+      </div>
+      <div class="fp-song-details">
+        <h2 id="fpTitle">Not Playing</h2>
+        <p id="fpArtist">Offline Library</p>
+      </div>
+
+      <!-- Equalizer Panel -->
+      <div id="eqPanel" class="eq-panel hidden">
+        <div class="eq-row">
+          <label>Bass Boost</label>
+          <input type="range" id="bassSlider" min="0" max="15" value="0" />
+        </div>
+        <div class="eq-row">
+          <label>Treble</label>
+          <input type="range" id="trebleSlider" min="-10" max="12" value="0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Scrubber & Controls -->
+    <div class="fp-bottom">
+      <div class="fp-progress-wrap">
+        <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" />
+        <div class="fp-times">
+          <span id="currentTime">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+      </div>
+
+      <div class="fp-controls">
+        <button id="loopBtn" class="fp-sec-btn" title="Loop Mode">🔁</button>
+        <button id="prevBtn" class="fp-main-skip">⏮</button>
+        <button id="playPauseBtn" class="fp-big-play">▶</button>
+        <button id="nextBtn" class="fp-main-skip">⏭</button>
+        <button id="shuffleBtn" class="fp-sec-btn" title="Shuffle">🔀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD TO PLAYLIST MODAL -->
+  <div id="playlistModal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <h3>Add to Playlist</h3>
+      <div id="modalPlaylistOptions" class="modal-list"></div>
+      <div class="modal-new-row">
+        <input type="text" id="modalNewPlaylistInput" placeholder="New playlist name..." />
+        <button id="modalCreateAddBtn">Create</button>
+      </div>
+      <button id="closeModalBtn" class="modal-close">Cancel</button>
+    </div>
+  </div>
+
+  <audio id="audioPlayer" crossorigin="anonymous"></audio>
   <script src="app.js"></script>
 </body>
 </html>

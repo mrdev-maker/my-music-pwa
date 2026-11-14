@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-pwa-v4';
+const CACHE_NAME = 'music-pwa-v6';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
